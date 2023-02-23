@@ -1,0 +1,100 @@
+---
+title: "Analizing Premier League teams with gganimate"
+output: md_document
+---
+
+## loading the Packages and reading the csv file
+
+```{r}
+library(readr)
+library(ggplot2)
+library(gganimate)
+library(gifski)
+teams <- read_csv("PremierLeagueTeams.csv")
+```
+
+## First rows
+
+```{r}
+head(teams)
+```
+
+## Correlation between Goals and Final Position in the league per Season
+
+```{r}
+teams$Season <- as.integer(teams$Season)
+teams$LgRank <- as.integer(teams$LgRank)
+p <- ggplot(teams,aes(GF, LgRank, size = GF, color = Squad)) +
+  geom_point(alpha = 0.6) +
+  labs(title="Goals vs Final Rank in the League",x = "Goals", y = "Final position on the League") +
+  scale_y_reverse()  +
+  theme(legend.text = element_text(size=10)) +
+  scale_size(range = c(2, 12), guide="none") 
+p
+```
+
+## Now lets animate the plot
+
+```{r}
+p + transition_time(Season) +
+  labs(title = "Year: {frame_time}") 
+```
+
+## Separate the plot by Team
+
+```{r}
+p + facet_wrap(~Squad) +
+  transition_time(Season) +
+  labs(title = "Year: {frame_time}")
+```
+
+## Line plot
+
+```{r}
+a <- ggplot(teams,aes(Season,LgRank, group = Squad, color = Squad)) +
+  geom_line() +
+  labs(title= "Ranking in the league through the years",x = "Seasons", y = "Final position in the League") +
+  scale_y_reverse() +
+  theme_linedraw() +
+  theme(legend.position = "bottom")
+  
+  
+a
+```
+
+## Animation
+
+```{r}
+a + geom_point() +
+  transition_reveal(Season)
+```
+
+## Now let's divide the plot per team
+
+```{r}
+a + facet_wrap(~Squad) +
+  geom_point() +
+  transition_reveal(Season)
+```
+
+## Rankings by Season played from 1996
+
+```{r}
+b <- ggplot(teams,aes(Squad,LgRank,fill=Squad)) +
+  geom_boxplot() +
+  labs(title="Rankings in the League from 1996 to the date",x="Teams",y="Ranking") +
+  theme_linedraw() +
+  theme(legend.position = "none") +
+  scale_y_reverse()
+b
+```
+
+## Animating the boxplot
+
+```{r}
+b <- b + transition_states(Squad, wrap = FALSE) +
+  shadow_mark() +
+  enter_grow()
+b
+animate(b, renderer = gifski_renderer())
+```
